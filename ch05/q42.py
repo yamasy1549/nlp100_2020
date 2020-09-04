@@ -23,8 +23,6 @@ if __name__ == "__main__":
     document = read_child_elements(root)
     for sentence in document:
         for chunk in sentence:
-            if chunk.dst == -1:
-                continue
             for src_id in chunk.srcs:
                 src_chunk = sentence[src_id]
                 print("{}{}\t{}{}".format(src_chunk.chunk_id, src_chunk.text, chunk.chunk_id, chunk.text))
