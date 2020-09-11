@@ -16,7 +16,7 @@ class Chunk:
         self.morphs = morphs
         self.dst = dst
         self.srcs = srcs
-        self.text = self.to_text()
+        self.text = self.to_text
 
     def to_text(self):
         """morphsからsurfaceの連接（表示用）を作る
@@ -26,6 +26,28 @@ class Chunk:
         """
 
         return "".join(map(lambda x: x.surface, self.morphs))
+
+    def include_pos(self, target_pos):
+        """指定したposを含むかどうか判定する
+
+            Args:
+                target_pos (str, list): 品詞名
+
+            Returns:
+                bool: 指定した品詞を含むならTrue
+        """
+
+        # 複数の品詞をORでチェックできるようにする
+        if type(target_pos) is str:
+            target_pos = [target_pos]
+
+        pos_list = map(lambda x: x.pos, self.morphs)
+        for pos in target_pos:
+            if pos in pos_list:
+                return True
+
+        return False
+
 
 def read_child_elements(parent):
     """与えられたXML要素の子要素の<tok>をMorphオブジェクトで、<chunk>をChunkオブジェクトで表現し、文ごとにリストを作る
@@ -69,11 +91,10 @@ def read_child_elements(parent):
 
 
 if __name__ == "__main__":
-    # CaboChaの出力には根となる要素がないので、無理矢理作ってElementTreeでパースできるようにする
-    with open("ai.ja.txt.parsed") as f:
-        root = ET.fromstringlist("<root>" + f.read() + "</root>")
+    from q40 import read_cabocha_xmlfile
 
-    document = read_child_elements(root)
+    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements)
+
     for sentence in document:
         for chunk in sentence:
-            print("{}{}\tdst:{}\tsrcs:{}".format(chunk.chunk_id, chunk.text, chunk.dst, chunk.srcs))
+            print("{}{}\tdst:{}\tsrcs:{}".format(chunk.chunk_id, chunk.text(), chunk.dst, chunk.srcs))

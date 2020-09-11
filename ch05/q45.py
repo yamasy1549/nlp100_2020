@@ -1,3 +1,9 @@
+def is_doushi(morph):
+    return morph.pos == "動詞"
+
+def is_joshi(morph):
+    return morph.pos == "助詞"
+
 def find_jutsugo(chunk):
     """文節中の述語を見つけて返す
 
@@ -9,7 +15,7 @@ def find_jutsugo(chunk):
     """
 
     # 動詞を含むかどうかチェックする
-    jutsugo_list = list(filter(lambda x: x.pos == "動詞", chunk.morphs))
+    jutsugo_list = list(filter(lambda x: is_doushi(x), chunk.morphs))
     if len(jutsugo_list) == 0:
         return ""
     # 文節の最左の動詞の基本形を述語とする
@@ -31,7 +37,7 @@ def find_kaku(chunk, sentence):
         src_chunk = sentence[src_id]
         for morph in src_chunk.morphs:
             # 述語(chunk)に係る助詞を格とする
-            if morph.pos == "助詞":
+            if is_joshi(morph):
                 kaku_list.append(morph.surface)
 
     # 辞書順に並べる
@@ -39,20 +45,21 @@ def find_kaku(chunk, sentence):
 
 
 if __name__ == "__main__":
-    from q41 import Chunk, read_child_elements
-    import xml.etree.ElementTree as ET
+    from q40 import read_cabocha_xmlfile
+    from q41 import read_child_elements
+    from q42 import exclude_marks
 
-    # CaboChaの出力には根となる要素がないので、無理矢理作ってElementTreeでパースできるようにする
-    with open("ai.ja.txt.parsed") as f:
-        root = ET.fromstringlist("<root>" + f.read() + "</root>")
+    exclude_marks()
+    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements)
+    document = filter(lambda x:len(x) != 0, document)
 
-    document = filter(lambda x:len(x) != 0, read_child_elements(root))
     for i, sentence in enumerate(document):
         for chunk in sentence:
             jutsugo = find_jutsugo(chunk)
-            # 動詞を含む文節のときの処理
-            if jutsugo:
-                kaku_list = find_kaku(chunk, sentence)
-                if len(kaku_list) != 0:
-                    kaku = " ".join(kaku_list)
-                    print("{}\t{}".format(jutsugo, kaku))
+            if not jutsugo:
+                continue
+            # chunkが述語のときの処理
+            kaku_list = find_kaku(chunk, sentence)
+            if len(kaku_list) != 0:
+                kaku = " ".join(kaku_list)
+                print("{}\t{}".format(jutsugo, kaku))
