@@ -25,7 +25,7 @@ class Chunk:
             str: morphs内のMorphのsurfaceを連接したもの
         """
 
-        return "".join(map(lambda x: x.surface, self.morphs))
+        return "".join([morph.surface for morph in self.morphs])
 
     def include_pos(self, target_pos):
         """指定したposを含むかどうか判定する

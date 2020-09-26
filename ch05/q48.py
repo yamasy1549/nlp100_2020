@@ -22,6 +22,15 @@ def path_to_root():
     Chunk.path_to_root = _path_to_root
 
 def path_text(chunk_list):
+    """パスに含まれるChunkの表層形のリストを返す
+
+        Args:
+            chunk_list (list): Chunkのリスト
+
+        Returns:
+            list: chunk_listに含まれるChunkの表層形のリスト
+    """
+
     return [chunk.text() for chunk in chunk_list]
 
 
