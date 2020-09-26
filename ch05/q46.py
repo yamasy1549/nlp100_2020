@@ -41,11 +41,9 @@ def find_kaku_kou(chunk, sentence):
 if __name__ == "__main__":
     from q40 import read_cabocha_xmlfile
     from q41 import Chunk, read_child_elements
-    from q42 import exclude_marks
     from q45 import find_jutsugo
 
-    exclude_marks()
-    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements)
+    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements, pos=["記号"])
     document = filter(lambda x:len(x) != 0, document)
 
     for sentence in document:

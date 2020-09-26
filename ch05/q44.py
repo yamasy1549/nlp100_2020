@@ -1,12 +1,10 @@
 if __name__ == "__main__":
+    import os
     from q40 import read_cabocha_xmlfile
     from q41 import Chunk, read_child_elements
-    from q42 import exclude_marks
     from graphviz import Digraph
 
-    exclude_marks()
-
-    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements)
+    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements, pos=["記号"])
     document = filter(lambda x:len(x) != 0, document)
 
     for i, sentence in enumerate(document):
@@ -19,3 +17,4 @@ if __name__ == "__main__":
                 graph.edge(str(src_chunk.chunk_id), str(chunk.chunk_id))
 
         graph.render("../output/sy44/{}".format(i))
+        os.remove("../output/sy44/{}".format(i))

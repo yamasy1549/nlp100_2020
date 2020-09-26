@@ -49,15 +49,23 @@ class Chunk:
         return False
 
 
-def read_child_elements(parent):
+def read_child_elements(parent, **kwargs):
     """与えられたXML要素の子要素の<tok>をMorphオブジェクトで、<chunk>をChunkオブジェクトで表現し、文ごとにリストを作る
 
     Args:
         parent (xml.etree.ElementTree.Element): XMLの親要素
+        kwargs (dict): 除外したいMorphの属性名(key)と値のリスト(value)
 
     Returns:
         list: parentの子要素を再帰的にChunkのリストにしたもの
     """
+
+    def ignore_morph(morph):
+        ignore_flags = dict({"surface": [], "base": [], "pos": [], "pos1": []}, **kwargs)
+        for attr in ["surface", "base", "pos", "pos1"]:
+            if getattr(morph, attr) in ignore_flags[attr]:
+                return True
+        return False
 
     document = []
 
@@ -66,11 +74,12 @@ def read_child_elements(parent):
             # tokならMorphにする
             feature = child.attrib["feature"].split(",")
             morph = Morph(morph_id=int(child.attrib["id"]), surface=child.text, base=feature[6], pos=feature[0], pos1=feature[1])
-            document.append(morph)
+            if not ignore_morph(morph):
+                document.append(morph)
 
         elif child.tag == "chunk":
             # 子要素を再帰的に見ていく
-            child_document = read_child_elements(child)
+            child_document = read_child_elements(child, **kwargs)
             # chunkならChunkにする
             chunk = Chunk(chunk_id=int(child.attrib["id"]),
                           morphs=child_document,
@@ -80,7 +89,7 @@ def read_child_elements(parent):
 
         elif child.tag == "sentence":
             # 子要素を再帰的に見ていく
-            child_document = read_child_elements(child)
+            child_document = read_child_elements(child, **kwargs)
             # srcsを埋める
             for chunk in child_document:
                 if chunk.dst != -1:

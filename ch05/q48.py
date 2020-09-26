@@ -28,12 +28,10 @@ def path_text(chunk_list):
 if __name__ == "__main__":
     from q40 import read_cabocha_xmlfile
     from q41 import read_child_elements
-    from q42 import exclude_marks
 
-    exclude_marks()
     path_to_root()
 
-    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements)
+    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements, pos=["記号"])
     document = filter(lambda x:len(x) != 0, document)
 
     for sentence in document:

@@ -1,10 +1,8 @@
 if __name__ == "__main__":
     from q40 import read_cabocha_xmlfile
     from q41 import Chunk, read_child_elements
-    from q42 import exclude_marks
 
-    exclude_marks()
-    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements)
+    document = read_cabocha_xmlfile("ai.ja.txt.parsed", read_child_elements, pos=["記号"])
 
     for sentence in document:
         for chunk in sentence:
