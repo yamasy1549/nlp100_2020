@@ -1,5 +1,3 @@
-from sklearn.linear_model import LogisticRegression
-
 def read_features(filename, num=True):
     """ファイルから素性を読み出す
 
@@ -18,7 +16,7 @@ def read_features(filename, num=True):
         for line in f:
             label, *feature = line.strip().split("\t")
             if num:
-                feature = [int(elem) for elem in feature]
+                feature = [float(elem) for elem in feature]
             features.append(feature)
             labels.append(label)
 
@@ -26,8 +24,11 @@ def read_features(filename, num=True):
 
 
 if __name__ == "__main__":
-    X_train, y_train = read_features("train.feature.txt", num=True)
-    X_test, y_test = read_features("test.feature.txt", num=True)
+    from q51 import dump
+    from sklearn.linear_model import LogisticRegression
 
-    lr = LogisticRegression()
-    lr.fit(X_train, y_train)
+    X_train, y_train = read_features("train.feature.txt", num=True)
+
+    model = LogisticRegression(max_iter=500)
+    model.fit(X_train, y_train)
+    dump("model.dat", model)
