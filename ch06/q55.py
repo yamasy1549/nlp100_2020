@@ -1,6 +1,7 @@
 def print_scores(y_true, y_pred, classes):
     print(classes)
-    print(confusion_matrix(y_true=y_train, y_pred=y_pred))
+    print(confusion_matrix(y_true=y_true, y_pred=y_pred))
+
 
 if __name__ == "__main__":
     from sklearn.metrics import confusion_matrix
