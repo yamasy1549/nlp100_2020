@@ -28,6 +28,6 @@ if __name__ == "__main__":
 
     X_train, y_train = read_features("train.feature.txt")
 
-    model = LogisticRegression(max_iter=500)
+    model = LogisticRegression(max_iter=1000)
     model.fit(X_train, y_train)
     dump("model.dat", model)
