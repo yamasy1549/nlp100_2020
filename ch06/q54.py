@@ -3,8 +3,8 @@ if __name__ == "__main__":
     from q51 import load
     from q52 import read_features
 
-    X_train, y_train = read_features("train.feature.txt", num=True)
-    X_test, y_test = read_features("test.feature.txt", num=True)
+    X_train, y_train = read_features("train.feature.txt")
+    X_test, y_test = read_features("test.feature.txt")
     model = load("model.dat")
 
     y_pred = model.predict(X_train)

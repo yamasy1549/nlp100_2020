@@ -1,9 +1,8 @@
-def read_features(filename, num=True):
+def read_features(filename):
     """ファイルから素性を読み出す
 
     Args:
         filename (str): ファイル名（中身は ラベル\t素性... の形式。行内の素性は\tで区切られている）
-        num (bool): 素性を数値とする
 
     Returns:
         list: [素性のリスト, ラベルのリスト]
@@ -15,8 +14,8 @@ def read_features(filename, num=True):
     with open(filename) as f:
         for line in f:
             label, *feature = line.strip().split("\t")
-            if num:
-                feature = [float(elem) for elem in feature]
+            # 素性をfloatとして読む
+            feature = [float(elem) for elem in feature]
             features.append(feature)
             labels.append(label)
 
@@ -27,7 +26,7 @@ if __name__ == "__main__":
     from q51 import dump
     from sklearn.linear_model import LogisticRegression
 
-    X_train, y_train = read_features("train.feature.txt", num=True)
+    X_train, y_train = read_features("train.feature.txt")
 
     model = LogisticRegression(max_iter=500)
     model.fit(X_train, y_train)

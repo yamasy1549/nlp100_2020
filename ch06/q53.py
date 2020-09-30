@@ -2,7 +2,7 @@ if __name__ == "__main__":
     from q51 import load
     from q52 import read_features
 
-    X_test, y_test = read_features("test.feature.txt", num=True)
+    X_test, y_test = read_features("test.feature.txt")
     model = load("model.dat")
 
     # 予測カテゴリ
