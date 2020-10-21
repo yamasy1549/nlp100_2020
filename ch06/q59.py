@@ -1,42 +1,34 @@
-from sklearn.metrics import accuracy_score, make_scorer
-
-
-def acc_test(clf, X, y_true):
-    y_pred = clf.predict(X_test)
-    return accuracy_score(y_true, y_pred)
-
-def acc_test_scorer():
-    return make_scorer(acc_test)
+def labelize(label, *data):
+    encoder = LabelEncoder()
+    encoder.fit(label)
+    result = [encoder.transform(_data) for _data in data]
+    return [encoder, *result]
 
 
 if __name__ == "__main__":
     from q52 import read_features
     from sklearn.metrics import accuracy_score
     from sklearn.model_selection import GridSearchCV
-    from sklearn.preprocessing import LabelEncoder
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.svm import SVR
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import LabelEncoder, StandardScaler
+    from sklearn.svm import SVC
 
     X_train, y_train = read_features("train.feature.txt")
     X_test, y_test = read_features("test.feature.txt")
     X_valid, y_valid = read_features("valid.feature.txt")
+    encoder, y_train, y_test, y_valid = labelize(["b", "e", "m", "t"], y_train, y_test, y_valid)
 
-    le = LabelEncoder()
-    le.fit(["b", "e", "m", "t"])
-    y_train = le.transform(y_train)
-    y_test = le.transform(y_test)
-    y_valid = le.transform(y_valid)
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("svc", SVC()),
+        ])
 
-    pipeline = make_pipeline(
-            StandardScaler(),
-            SVR()
-            )
-    parameters = {
-            "svr__C": [0.001, 0.01, 0.1, 1, 10, 100],
-            "svr__epsilon": [0.1 * n for n in range(10)],
+    parameter = {
+            "svc__C": [0.1, 1, 10],
+            "svc__kernel": ["linear", "poly", "rbf", "sigmoid"],
+            "svc__gamma": ["scale", "auto"],
             }
-    model = GridSearchCV(pipeline, parameters, scoring=acc_test_scorer(), n_jobs=-1)
-    model.fit(X_train, y_train)
 
+    model = GridSearchCV(pipeline, parameter, n_jobs=-1)
+    model.fit(X_train, y_train)
     import pdb; pdb.set_trace()
