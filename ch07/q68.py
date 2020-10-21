@@ -44,4 +44,4 @@ if __name__ == "__main__":
     # 描画
     plt.figure(figsize=(20, 10))
     plot_dendrogram(model, labels=country_list)
-    plt.savefig("../output/sy68.png")
+    plt.savefig("../output/sy68.svg")

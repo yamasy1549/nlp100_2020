@@ -47,4 +47,4 @@ if __name__ == "__main__":
     for x, y, label in zip(*features, country_list):
         plt.text(x, y, label, size=10)
     plt.scatter(*features, alpha=0.8)
-    plt.savefig("../output/sy69.png")
+    plt.savefig("../output/sy69.svg")
