@@ -21,19 +21,19 @@ def merge_meishi_ku(morphs):
     """
 
     merged_morphs = []
-    tmp_morph = None
 
     for morph in morphs:
-        if morph.pos == "名詞":
-            if tmp_morph:
-                tmp_morph.surface += morph.surface
-                tmp_morph.base += morph.base
-            else:
-                tmp_morph = morph
+        # 一番目のmorphはmerged_morphsに入れておく
+        if len(merged_morphs) == 0:
+            merged_morphs.append(morph)
+            continue
+
+        if merged_morphs[-1].pos == "名詞" and morph.pos == "名詞":
+            # 名詞->名詞
+            merged_morphs[-1].surface += morph.surface
+            merged_morphs[-1].base += morph.base
         else:
-            if tmp_morph:
-                merged_morphs.append(tmp_morph)
-                tmp_morph = None
+            # 名詞->名詞以外 or 名詞以外->名詞 or 名詞以外->名詞以外
             merged_morphs.append(morph)
     return merged_morphs
 
