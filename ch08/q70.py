@@ -1,4 +1,5 @@
 import csv
+import torch
 import numpy as np
 from gensim.models import KeyedVectors
 
@@ -67,6 +68,32 @@ def category_to_label(category):
     elif category == "h":
         return 3
 
+def select_features(df):
+    """ dfから特徴量を取り出す
+
+    Args:
+        pd.DataFrame (df): df
+
+    Returns:
+        torch.Tensor: 読みだしたデータ
+    """
+
+    data = df.loc[:, df.columns.str.startswith("vec")]
+    return torch.Tensor(data.values)
+
+def select_labels(df):
+    """ dfからラベルを取り出す
+
+    Args:
+        pd.DataFrame (df): df
+
+    Returns:
+        torch.Tensor: 読みだしたデータ
+    """
+
+    data = df["label"]
+    return torch.Tensor(data.values).long()
+
 
 if __name__ == "__main__":
     import pandas as pd
@@ -88,9 +115,14 @@ if __name__ == "__main__":
     df = df[df["category"].isin(["b", "t", "e", "h"])]
     df = df[["title", "category"]]
 
-    feature = df["title"].apply(lambda title: text_to_feature(title))
-    label = df["category"].apply(lambda category: category_to_label(category))
-    df = pd.DataFrame.from_dict({"feature": feature, "label": label})
+    # 特徴ベクトルをつくる
+    features = []
+    for i, row in df.iterrows():
+        feature = text_to_feature(row["title"])
+        feature = { "vec{}".format(i): feature[i] for i in range(len(feature)) }
+        feature = dict(**feature, label=category_to_label(row["category"]))
+        features.append(feature)
+    df = pd.DataFrame.from_dict(features)
 
     train, valid = train_test_split(df, test_size=0.2)
     valid, test = train_test_split(valid, test_size=0.5)
@@ -98,6 +130,6 @@ if __name__ == "__main__":
     valid = valid.reset_index(drop=True)
     test = test.reset_index(drop=True)
 
-    save_data("train.data", {"feature": train["feature"], "label": train["label"]})
-    save_data("valid.data", {"feature": valid["feature"], "label": valid["label"]})
-    save_data("test.data", {"feature": test["feature"], "label": test["label"]})
+    save_data("train.data", {"feature": select_features(train), "label": select_labels(train)})
+    save_data("valid.data", {"feature": select_features(valid), "label": select_labels(valid)})
+    save_data("test.data", {"feature": select_features(test), "label": select_labels(test)})

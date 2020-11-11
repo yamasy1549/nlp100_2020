@@ -1,5 +1,5 @@
 import dill
-import numpy as np
+import torch.nn as nn
 
 
 def save_data(filename, data):
@@ -27,29 +27,34 @@ def load_data(filename):
     with open(filename, "rb") as f:
         return dill.load(f)
 
-def to_nparray(series):
-    """ np.arrayのSeriesを行列にする
 
-    Args:
-        series (pd.Series): np.arrayのSeries
-
-    Returns:
-        np.array: 行列にしたもの
+class SingleLayerNN(nn.Module):
+    """ 単層ニューラルネットワーク
     """
 
-    return np.array([*series])
+    def __init__(self, n_in, n_mid):
+        super().__init__()
+        self.W = nn.Linear(n_in, n_mid)
+        # 一様分布で初期化
+        nn.init.normal_(self.W.weight, 0.0, 1.0)
+
+    def forward(self, x):
+        output = self.W(x)
+        return output
 
 
 if __name__ == "__main__":
-    import numpy as np
-    from scipy.special import softmax
+    import torch
 
     train = load_data("train.data")
-    X_train, y_train = train["feature"], train["label"]
+    X_train = train["feature"]
 
-    W = np.random.rand(300, 4)
+    model = SingleLayerNN(300, 4)
 
-    y = X_train[0]
-    print(softmax(y.dot(W)))
-    y = to_nparray(X_train[0:4])
-    print(softmax(y.dot(W)))
+    _y = model(X_train[0:1])
+    y = torch.softmax(_y, dim=-1)
+    print(y)
+
+    _y = model(X_train[0:4])
+    y = torch.softmax(_y, dim=-1)
+    print(y)
