@@ -1,4 +1,5 @@
 import dill
+import torch
 import torch.nn as nn
 
 
@@ -32,29 +33,26 @@ class SingleLayerNN(nn.Module):
     """ 単層ニューラルネットワーク
     """
 
-    def __init__(self, n_in, n_mid):
+    def __init__(self, n_in, n_out):
         super().__init__()
-        self.W = nn.Linear(n_in, n_mid)
-        # 一様分布で初期化
-        nn.init.normal_(self.W.weight, 0.0, 1.0)
+        # Wは初期化
+        self.W = nn.Parameter(torch.randn(300, 4))
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
-        output = self.W(x)
-        return output
+        x = x @ self.W
+        x = self.softmax(x)
+        return x
 
 
 if __name__ == "__main__":
-    import torch
-
     train = load_data("train.data")
     X_train = train["feature"]
 
     model = SingleLayerNN(300, 4)
 
-    _y = model(X_train[0:1])
-    y = torch.softmax(_y, dim=-1)
-    print(y)
+    y_pred = model(X_train[0:1])
+    print(y_pred)
 
-    _y = model(X_train[0:4])
-    y = torch.softmax(_y, dim=-1)
-    print(y)
+    y_pred = model(X_train[0:4])
+    print(y_pred)

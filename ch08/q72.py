@@ -13,11 +13,11 @@ if __name__ == "__main__":
     loss = loss_func(y_pred, y_true)
     loss.backward()
     print("クロスエントロピー損失", loss.item())
-    print("行列Wに対する勾配", model.W.weight.grad)
+    print("行列Wに対する勾配", model.W.grad)
 
     model.zero_grad()
     y_pred, y_true = model(X_train[0:4]), y_train[0:4]
     loss = loss_func(y_pred, y_true)
     loss.backward()
     print("クロスエントロピー損失", loss.item())
-    print("行列Wに対する勾配", model.W.weight.grad)
+    print("行列Wに対する勾配", model.W.grad)
