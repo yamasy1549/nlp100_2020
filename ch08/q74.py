@@ -23,5 +23,7 @@ if __name__ == "__main__":
 
     model, *_ = train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256)
 
+    # 検証モード
+    model.eval()
     print("train_acc:", accuracy_score(model(X_train).argmax(dim=-1), y_train))
     print("valid_acc:", accuracy_score(model(X_valid).argmax(dim=-1), y_valid))

@@ -33,14 +33,15 @@ class SingleLayerNN(nn.Module):
     """ 単層ニューラルネットワーク
     """
 
-    def __init__(self, n_in, n_out):
+    def __init__(self, in_features, out_features):
         super().__init__()
         # Wは初期化
-        self.W = nn.Parameter(torch.randn(300, 4))
+        self.linear = nn.Linear(in_features, out_features, bias=False)
+        nn.init.normal_(self.linear.weight, 0.0, 1.0)
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
-        x = x @ self.W
+        x = self.linear(x)
         x = self.softmax(x)
         return x
 

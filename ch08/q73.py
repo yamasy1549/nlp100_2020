@@ -36,9 +36,10 @@ def train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256):
     loss_func = nn.CrossEntropyLoss()
 
     for epoch in range(epochs):
+        # 訓練モード
+        model.train()
         for X, y in batch(X_train, y_train, batch_size):
-            y_pred = model(X)
-            loss = loss_func(y_pred, y)
+            loss = loss_func(model(X), y)
             # 勾配初期化
             optimizer.zero_grad()
             # 勾配計算
@@ -50,10 +51,10 @@ def train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256):
 
 
 if __name__ == "__main__":
-    from q71 import SingleLayerNN
+    from q71 import load_data
 
     train = load_data("train.data")
     X_train, y_train = train["feature"], train["label"]
 
     model, *_ = train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256)
-    print(model.W)
+    print(model.linear.weight)
