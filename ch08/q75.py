@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +9,7 @@ from q73 import batch
 
 class Trainer():
     def __init__(self):
-        self.model = SingleLayerNN(300, 4)
+        # 初期化など
         self.loss_func = nn.CrossEntropyLoss()
         self.plot_data = {
                 "train_loss": [],
@@ -17,7 +18,56 @@ class Trainer():
                 "valid_acc": [],
                 }
 
-    def train(self, X_train, y_train, X_valid, y_valid, lr=1e-2, epochs=100, batch_size=256):
+    def calc_scores(self, X_data, y_data, batch_size):
+        """ 損失と正解率を計算する
+
+        Args:
+            X_datatrain (iterable): データ
+            y_datatrain (iterable): データのラベル
+            batch_size (int): バッチサイズ
+
+        Returns:
+            tuple: loss, accuracy
+        """
+
+        loss = 0.0
+        correct = 0
+        total = 0
+        batch_count = 0
+
+        for X, y in batch(X_data, y_data, batch_size):
+            loss += self.loss_func(self.model(X), y).item()
+            correct += (self.model(X).argmax(dim=-1) == y).sum().item()
+            total += len(X)
+            batch_count += 1
+
+        return loss / batch_count, correct / total
+
+    def plot(self):
+        """ スコアをグラフに描画する
+        """
+
+        epochs = list(range(self.epoch+1))
+
+        for key, value in self.plot_data.items():
+            plt.plot(epochs, value, label=key)
+        plt.legend()
+        plt.savefig("sy75.png")
+
+    def save_checkpoint(self):
+        """ チェックポイントでセーブする
+        """
+
+        path = "sy76model:{}.pt".format(self.epoch)
+        torch.save({
+            'epoch': self.epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            }, path)
+
+    def train(self, X_train, y_train, X_valid, y_valid,
+            lr=1e-2, epochs=100, batch_size=256,
+            plot=False, checkpoint=False, time_prof=False):
         """ モデルを訓練する
 
         Args:
@@ -33,9 +83,14 @@ class Trainer():
             tuple: model, optimizer, loss_func
         """
 
+        self.model = SingleLayerNN(300, 4)
         self.optimizer = optim.SGD(self.model.parameters(), lr=lr)
 
+        # 訓練開始
         for epoch in range(epochs):
+            self.epoch = epoch
+            start = time.time()
+
             # 訓練モード
             self.model.train()
             for X, y in batch(X_train, y_train, batch_size):
@@ -44,8 +99,11 @@ class Trainer():
                 loss.backward()
                 self.optimizer.step()
 
+            if time_prof:
+                print(time.time() - start)
+
             # 検証モード
-            self.model.eval()
+            #  self.model.eval()
             with torch.no_grad():
                 train_loss, train_acc = self.calc_scores(X_train, y_train, batch_size)
                 valid_loss, valid_acc = self.calc_scores(X_valid, y_valid, batch_size)
@@ -54,31 +112,13 @@ class Trainer():
                 self.plot_data["train_acc"].append(train_acc)
                 self.plot_data["valid_acc"].append(valid_acc)
 
-        self.plot(epochs)
+            # チェックポイント
+            if checkpoint:
+                save_checkpoint()
 
-    def calc_scores(self, X_data, y_data, batch_size):
-        loss = 0.0
-        correct = 0
-        total = 0
-        batch_count = 0
-
-        for X, y in batch(X_data, y_data, batch_size):
-            loss += self.loss_func(self.model(X), y).item()
-            correct += (self.model(X).argmax(dim=-1) == y).sum().item()
-            total += len(X)
-            batch_count += 1
-
-        return loss / batch_count, correct / total
-
-
-    def plot(self, epoch):
-        epochs = list(range(epoch))
-
-        for key, value in self.plot_data.items():
-            plt.plot(epochs, value, label=key)
-        plt.legend()
-        plt.savefig("q75.png")
-
+        # グラフ描画
+        if plot:
+            self.plot()
 
 
 if __name__ == "__main__":
@@ -89,5 +129,6 @@ if __name__ == "__main__":
     X_train, y_train = train["feature"], train["label"]
     X_valid, y_valid = valid["feature"], valid["label"]
 
-    trainer = Trainer()
-    trainer.train(X_train, y_train, X_valid, y_valid, lr=1e-2, epochs=100, batch_size=256)
+    Trainer().train(X_train, y_train, X_valid, y_valid,
+            lr=1e-2, epochs=100, batch_size=256,
+            plot=True)
