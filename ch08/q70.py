@@ -9,29 +9,6 @@ vocab = w2v.vocab.keys()
 word_to_vec = w2v.word_vec
 
 
-def create_empty_vec():
-    """ 0埋めされた単語ベクトルをつくる
-
-    Returns:
-        np.array: 単語ベクトル
-    """
-
-    return np.array([0.0] * 300)
-
-def word_to_vector(word):
-    """ 単語からベクトルをつくる
-
-    Args:
-        word (str): 単語
-
-    Returns:
-        np.array: 単語ベクトル
-    """
-
-    if word in vocab:
-        return word_to_vec(word)
-    return create_empty_vec()
-
 def text_to_feature(text):
     """ テキストから素性をつくる
 
@@ -42,12 +19,11 @@ def text_to_feature(text):
         np.array: 素性
     """
 
-    vec = create_empty_vec()
     words = text.split(" ")
+    words = [word.strip("(),!?:;'\"") for word in words]
 
-    for word in words:
-        vec += word_to_vector(word)
-    return vec / len(words)
+    vec = [word_to_vec(word) for word in words if word in vocab]
+    return sum(vec) / len(vec)
 
 def category_to_label(category):
     """ カテゴリ名からラベルをつくる
@@ -118,14 +94,18 @@ if __name__ == "__main__":
     # 特徴ベクトルをつくる
     features = []
     for i, row in df.iterrows():
-        feature = text_to_feature(row["title"])
-        feature = { "vec{}".format(i): feature[i] for i in range(len(feature)) }
+        try:
+            feature = text_to_feature(row["title"])
+            feature = { "vec{}".format(i): feature[i] for i in range(len(feature)) }
+        except:
+            print(row["title"], "was ignored.")
+            continue
         feature = dict(**feature, label=category_to_label(row["category"]))
         features.append(feature)
     df = pd.DataFrame.from_dict(features)
 
-    train, valid = train_test_split(df, test_size=0.2)
-    valid, test = train_test_split(valid, test_size=0.5)
+    train, valid = train_test_split(df, test_size=0.2, stratify=df["label"])
+    valid, test = train_test_split(valid, test_size=0.5, stratify=valid["label"])
     train = train.reset_index(drop=True)
     valid = valid.reset_index(drop=True)
     test = test.reset_index(drop=True)

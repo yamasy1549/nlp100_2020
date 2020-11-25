@@ -1,29 +1,42 @@
-def accuracy_score(pred, true):
+import torch
+
+
+def accuracy_score(model, dataloader):
     """ accuracyを計算する
 
     Args:
-        pred (list): 予測データ
-        true (list): 正解データ
+        model (nn.Module): モデル
+        dataloader (torch.utils.data.DataLoader): データ
 
     Returns:
         float: accuracy
     """
 
-    return len([p for p, t in zip(pred, true) if p == t]) / len(pred)
-
-
-if __name__ == "__main__":
-    from q71 import load_data
-    from q73 import train_model
-
-    train = load_data("train.data")
-    valid = load_data("valid.data")
-    X_train, y_train = train["feature"], train["label"]
-    X_valid, y_valid = valid["feature"], valid["label"]
-
-    model, *_ = train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256)
+    total = 0
+    correct = 0
 
     # 検証モード
     model.eval()
-    print("train_acc:", accuracy_score(model(X_train).argmax(dim=-1), y_train))
-    print("valid_acc:", accuracy_score(model(X_valid).argmax(dim=-1), y_valid))
+
+    with torch.no_grad():
+        for X, y in dataloader:
+            y_pred = torch.argmax(model(X), dim=-1)
+            total += len(y)
+            correct += (y_pred == y).sum().item()
+
+    return correct / total
+
+
+if __name__ == "__main__":
+    from q71 import SingleLayerNN
+    from q73 import load_dataloader, train_model
+
+    dataloader_train = load_dataloader("train.data", batch_size=1)
+    dataloader_valid = load_dataloader("valid.data", batch_size=512)
+
+        model = SingleLayerNN(300, 4)
+    model, *_ = train_model(model, dataloader_train, dataloader_valid,
+            lr=1e-2, epochs=100)
+
+    print("train_acc:", accuracy_score(model, dataloader_train))
+    print("valid_acc:", accuracy_score(model, dataloader_valid))

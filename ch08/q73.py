@@ -1,31 +1,49 @@
 import torch.nn as nn
 import torch.optim as optim
-from q71 import SingleLayerNN
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+from q71 import load_data, SingleLayerNN
 
 
-def batch(X, y, batch_size=1):
-    """ ミニバッチをつくる
+class NewsDataset(Dataset):
+  def __init__(self, X, y):
+    self.X = X
+    self.y = y
+
+  def __len__(self):
+    return len(self.y)
+
+  def __getitem__(self, idx):
+    return [self.X[idx], self.y[idx]]
+
+
+def load_dataloader(filename, batch_size=-1, **kwargs):
+    """ データを読んでDataLoaderをつくる
 
     Args:
-        X (iterable): X
-        y (iterable): y
-        batch_size (int): バッチサイズ
+        filename (str): データファイル名
+        batch_size (int): バッチサイズ。デフォルトはバッチなし
+
+    Returns:
+        torch.utils.data.DataLoader: DataLoader
     """
 
-    X_size = len(X)
-    for begin in range(0, X_size, batch_size):
-        end = min(begin + batch_size, X_size)
-        yield X[begin:end], y[begin:end]
+    data = load_data(filename)
+    dataset = NewsDataset(data["feature"], data["label"])
 
-def train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256):
+    if batch_size == -1:
+        kwargs["batch_size"] = len(dataset)
+
+    dataloader = DataLoader(dataset, **kwargs)
+    return dataloader
+
+def train_model(dataloader, lr=1e-2, epochs=100):
     """ モデルを訓練する
 
     Args:
-        X_train (iterable): 訓練データ
-        y_train (iterable): 訓練データのラベル
+        dataloader (torch.utils.data.DataLoader): 訓練データ
         lr (float): 学習率
         epochs (int): エポック数
-        batch_size (int): バッチサイズ
 
     Returns:
         tuple: model, optimizer, loss_func
@@ -38,23 +56,24 @@ def train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256):
     for epoch in range(epochs):
         # 訓練モード
         model.train()
-        for X, y in batch(X_train, y_train, batch_size):
-            loss = loss_func(model(X), y)
+        progressbar = tqdm(total=len(dataloader))
+        progressbar.set_description("epoch {}".format(epoch+1))
+
+        for i, (X, y) in enumerate(dataloader):
             # 勾配初期化
             optimizer.zero_grad()
-            # 勾配計算
+            # 損失計算
+            loss = loss_func(model(X), y)
             loss.backward()
             # 勾配更新
             optimizer.step()
+            progressbar.update(1)
 
     return model, optimizer, loss_func
 
 
 if __name__ == "__main__":
-    from q71 import load_data
+    dataloader_train = load_dataloader("train.data", batch_size=1)
 
-    train = load_data("train.data")
-    X_train, y_train = train["feature"], train["label"]
-
-    model, *_ = train_model(X_train, y_train, lr=1e-2, epochs=100, batch_size=256)
+    model, *_ = train_model(dataloader_train, lr=1e-2, epochs=100)
     print(model.linear.weight)

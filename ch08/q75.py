@@ -3,132 +3,159 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from q71 import SingleLayerNN
-from q73 import batch
+from tqdm import tqdm
 
 
-class Trainer():
-    def __init__(self):
-        # 初期化など
-        self.loss_func = nn.CrossEntropyLoss()
-        self.plot_data = {
-                "train_loss": [],
-                "valid_loss": [],
-                "train_acc": [],
-                "valid_acc": [],
-                }
+def plot_scores(epochs, plot_data):
+    """ スコアをグラフに描画する
 
-    def calc_scores(self, X_data, y_data, batch_size):
-        """ 損失と正解率を計算する
+    Args:
+        epochs (int): 総エポック数
+        plot_data (dict): 描画データ
+    """
 
-        Args:
-            X_datatrain (iterable): データ
-            y_datatrain (iterable): データのラベル
-            batch_size (int): バッチサイズ
+    for key, value in plot_data.items():
+        plt.plot(epochs, value, label=key)
+    plt.legend()
+    plt.savefig("sy75.png")
 
-        Returns:
-            tuple: loss, accuracy
-        """
+def save_params(model, optimizer, epoch):
+    """ チェックポイントでセーブする
 
-        loss = 0.0
-        correct = 0
-        total = 0
-        batch_count = 0
+    Args:
+        model (nn.Module): モデル
+        epoch (int): 現在のエポック数
+    """
 
-        for X, y in batch(X_data, y_data, batch_size):
-            loss += self.loss_func(self.model(X), y).item()
-            correct += (self.model(X).argmax(dim=-1) == y).sum().item()
-            total += len(X)
-            batch_count += 1
+    path = "sy76model:{}.pt".format(epoch)
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        }, path)
 
-        return loss / batch_count, correct / total
+def calc_scores(model, loss_func, dataloader, device="cpu"):
+    """ 損失と正解率を計算する
 
-    def plot(self):
-        """ スコアをグラフに描画する
-        """
+    Args:
+        model (nn.Module): モデル
+        loss_func (torch.nn.modules.loss.*): 損失関数
+        dataloader (torch.utils.data.DataLoader): データ
+        device (str): GPUを使うかどうか
 
-        epochs = list(range(self.epoch+1))
+    Returns:
+        tuple: loss, accuracy
+    """
 
-        for key, value in self.plot_data.items():
-            plt.plot(epochs, value, label=key)
-        plt.legend()
-        plt.savefig("sy75.png")
+    loss = 0.0
+    total = 0
+    batch_count = len(dataloader)
+    correct = 0
 
-    def save_checkpoint(self):
-        """ チェックポイントでセーブする
-        """
+    # 検証モード
+    model.eval()
 
-        path = "sy76model:{}.pt".format(self.epoch)
-        torch.save({
-            'epoch': self.epoch,
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            }, path)
+    with torch.no_grad():
+        for i, (X, y) in enumerate(dataloader):
+            X = X.to(device)
+            y = y.to(device)
 
-    def train(self, X_train, y_train, X_valid, y_valid,
-            lr=1e-2, epochs=100, batch_size=256,
-            plot=False, checkpoint=False, time_prof=False):
-        """ モデルを訓練する
+            loss += loss_func(model(X), y).item()
+            y_pred = torch.argmax(model(X), dim=-1)
+            total += len(y)
+            correct += (y_pred == y).sum().item()
 
-        Args:
-            X_train (iterable): 訓練データ
-            y_train (iterable): 訓練データのラベル
-            X_valid (iterable): 検証データ
-            y_valid (iterable): 検証データのラベル
-            lr (float): 学習率
-            epochs (int): エポック数
-            batch_size (int): バッチサイズ
+    return loss / batch_count, correct / total
 
-        Returns:
-            tuple: model, optimizer, loss_func
-        """
+def train_model(model, dataloader_train, dataloader_valid, lr=1e-2, epochs=100, device="cpu",
+        show_progress=True, save_plot=False, save_checkpoint=False, take_time=False):
+    """ モデルを訓練する
 
-        self.model = SingleLayerNN(300, 4)
-        self.optimizer = optim.SGD(self.model.parameters(), lr=lr)
+    Args:
+        dataloader_train (torch.utils.data.DataLoader): 訓練データ
+        dataloader_valid (torch.utils.data.DataLoader): 検証データ
+        lr (float): 学習率
+        epochs (int): エポック数
+        device (str): GPUを使うかどうか
+        show_progress (bool): 進行度を表示するかどうか
+        save_plot (bool): スコアをプロットして保存するかどうか
+        save_checkpoint (bool): チェックポイントでセーブするかどうか
+        take_time (bool): 1エポックごとの所要時間を測るかどうか
 
-        # 訓練開始
-        for epoch in range(epochs):
-            self.epoch = epoch
-            start = time.time()
+    Returns:
+        tuple: model, optimizer, loss_func
+    """
 
-            # 訓練モード
-            self.model.train()
-            for X, y in batch(X_train, y_train, batch_size):
-                loss = self.loss_func(self.model(X), y)
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+    # グラフ描画用
+    plot_data = {
+            "train_loss": [],
+            "valid_loss": [],
+            "train_acc": [],
+            "valid_acc": [],
+            }
 
-            if time_prof:
-                print(time.time() - start)
+    model = model.to(device)
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+    loss_func = nn.CrossEntropyLoss()
 
-            # 検証モード
-            #  self.model.eval()
-            with torch.no_grad():
-                train_loss, train_acc = self.calc_scores(X_train, y_train, batch_size)
-                valid_loss, valid_acc = self.calc_scores(X_valid, y_valid, batch_size)
-                self.plot_data["train_loss"].append(train_loss)
-                self.plot_data["valid_loss"].append(valid_loss)
-                self.plot_data["train_acc"].append(train_acc)
-                self.plot_data["valid_acc"].append(valid_acc)
+    for epoch in range(epochs):
+        if show_progress:
+            progressbar = tqdm(total=len(dataloader_train))
+            progressbar.set_description("epoch {}".format(epoch+1))
 
-            # チェックポイント
-            if checkpoint:
-                save_checkpoint()
+        # 訓練モード
+        model.train()
 
-        # グラフ描画
-        if plot:
-            self.plot()
+        # 時間計測
+        start_time = time.time()
+
+        for i, (X, y) in enumerate(dataloader_train):
+            X = X.to(device)
+            y = y.to(device)
+
+            # 勾配初期化
+            optimizer.zero_grad()
+            # 損失計算
+            loss = loss_func(model(X), y)
+            loss.backward()
+            # 勾配更新
+            optimizer.step()
+
+            if show_progress:
+                progressbar.update(1)
+
+        # 時間計測
+        if take_time:
+            end_time = time.time()
+            print("time:", end_time - start_time)
+
+        # スコア計算
+        train_loss, train_acc = calc_scores(model, loss_func, dataloader_train, device=device)
+        valid_loss, valid_acc = calc_scores(model, loss_func, dataloader_valid, device=device)
+        plot_data["train_loss"].append(train_loss)
+        plot_data["valid_loss"].append(valid_loss)
+        plot_data["train_acc"].append(train_acc)
+        plot_data["valid_acc"].append(valid_acc)
+        print("epoch:", epoch, {key:value[-1] for key, value in plot_data.items()})
+
+        # チェックポイントでセーブ
+        if save_checkpoint:
+            save_params(model, optimizer, epoch)
+
+    # スコアをプロットして保存
+    if save_plot:
+        plot_scores(epochs, plot_data)
+
+    return model, optimizer, loss_func
 
 
 if __name__ == "__main__":
-    from q71 import load_data
+    from q71 import SingleLayerNN
+    from q73 import load_dataloader
 
-    train = load_data("train.data")
-    valid = load_data("valid.data")
-    X_train, y_train = train["feature"], train["label"]
-    X_valid, y_valid = valid["feature"], valid["label"]
+    dataloader_train = load_dataloader("train.data", batch_size=1)
+    dataloader_valid = load_dataloader("valid.data", batch_size=512)
 
-    Trainer().train(X_train, y_train, X_valid, y_valid,
-            lr=1e-2, epochs=100, batch_size=256,
-            plot=True)
+    model = SingleLayerNN(300, 4)
+    model, *_ = train_model(model, dataloader_train, dataloader_valid,
+            lr=1e-2, epochs=100, save_plot=True)

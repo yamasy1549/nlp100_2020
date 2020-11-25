@@ -1,17 +1,14 @@
 if __name__ == "__main__":
-    from q71 import load_data
-    from q75 import Trainer
+    from q71 import SingleLayerNN
+    from q73 import load_dataloader
+    from q75 import train_model
 
-    train = load_data("train.data")
-    valid = load_data("valid.data")
-    X_train, y_train = train["feature"], train["label"]
-    X_valid, y_valid = valid["feature"], valid["label"]
+    batch_size_list = [2 ** i for i in range(20)]
 
-    batch_size = 1
+    for batch_size in batch_size_list:
+        dataloader_train = load_dataloader("train.data", batch_size=batch_size)
+        dataloader_valid = load_dataloader("valid.data", batch_size=512)
 
-    while batch_size < len(X_train):
-        Trainer().train(X_train, y_train, X_valid, y_valid,
-                lr=1e-2, epochs=100, batch_size=batch_size,
-                time_prof=True)
-
-        batch_size *= 2
+        model = SingleLayerNN(300, 4)
+        model, *_ = train_model(model, dataloader_train, dataloader_valid,
+                lr=1e-2, epochs=100, take_time=True)

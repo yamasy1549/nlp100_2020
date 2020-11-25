@@ -1,5 +1,4 @@
 import dill
-import torch
 import torch.nn as nn
 
 
@@ -38,22 +37,24 @@ class SingleLayerNN(nn.Module):
         # Wは初期化
         self.linear = nn.Linear(in_features, out_features, bias=False)
         nn.init.normal_(self.linear.weight, 0.0, 1.0)
-        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
         x = self.linear(x)
-        x = self.softmax(x)
         return x
 
 
 if __name__ == "__main__":
+    import torch
+
     train = load_data("train.data")
     X_train = train["feature"]
 
     model = SingleLayerNN(300, 4)
 
     y_pred = model(X_train[0:1])
-    print(y_pred)
+    y_proba = torch.softmax(y_pred, dim=-1)
+    print(y_proba)
 
     y_pred = model(X_train[0:4])
-    print(y_pred)
+    y_proba = torch.softmax(y_pred, dim=-1)
+    print(y_proba)

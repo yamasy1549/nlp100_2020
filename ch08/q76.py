@@ -1,12 +1,11 @@
 if __name__ == "__main__":
-    from q71 import load_data
-    from q75 import Trainer
+    from q71 import SingleLayerNN
+    from q73 import load_dataloader
+    from q75 import train_model
 
-    train = load_data("train.data")
-    valid = load_data("valid.data")
-    X_train, y_train = train["feature"], train["label"]
-    X_valid, y_valid = valid["feature"], valid["label"]
+    dataloader_train = load_dataloader("train.data", batch_size=1)
+    dataloader_valid = load_dataloader("valid.data", batch_size=512)
 
-    Trainer().train(X_train, y_train, X_valid, y_valid,
-            lr=1e-2, epochs=100, batch_size=256,
-            checkpoint=True)
+    model = SingleLayerNN(300, 4)
+    model, *_ = train_model(model, dataloader_train, dataloader_valid,
+            lr=1e-2, epochs=100, save_checkpoint=True)
